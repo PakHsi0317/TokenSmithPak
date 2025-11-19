@@ -69,8 +69,8 @@ CORES="$(
 
 # --- Configure & build ---
 log "Building with options: ${CMAKE_OPTS[*]}"
-cmake -S "$LLAMA_DIR" -B "$LLAMA_BUILD_DIR" -DCMAKE_BUILD_TYPE=Release "${CMAKE_OPTS[@]}"
-cmake --build "$LLAMA_BUILD_DIR" --target llama-cli -- -j"$CORES"
+cmake -S "$LLAMA_DIR" -B "$LLAMA_BUILD_DIR" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF "${CMAKE_OPTS[@]}"
+cmake --build "$LLAMA_BUILD_DIR" --target llama-cli
 
 # --- Locate the resulting binary ---
 if [[ -x "$LLAMA_BUILD_DIR/bin/llama-cli" ]]; then

@@ -41,8 +41,8 @@ class QueryPlanConfig:
     # query enhancement
     use_hyde: bool
     hyde_max_tokens: int
-    use_indexed_chunks: bool
-
+    use_indexed_chunks: bool = True
+    fallback_to_full_index: bool = True
     # ---------- chunking strategy + artifact name helpers ----------
     def make_strategy(self) -> ChunkStrategy:
         return make_chunk_strategy(config=self.chunk_config)
@@ -87,6 +87,7 @@ class QueryPlanConfig:
             output_mode    = pick("output_mode", "terminal"),
             metrics        = pick("metrics", ["all"]),
             use_indexed_chunks= pick("use_indexed_chunks", False),
+            fallback_to_full_index = pick("fallback_to_full_index", True),
             
             # Query Enhancement
             use_hyde       = pick("use_hyde", False),
@@ -135,6 +136,7 @@ class QueryPlanConfig:
             "output_mode": self.output_mode,
             "metrics": self.metrics,
             "use_indexed_chunks": self.use_indexed_chunks,
+            "fallback_to_full_index": self.fallback_to_full_index,
             "use_hyde": self.use_hyde,
             "hyde_max_tokens": self.hyde_max_tokens,
         }

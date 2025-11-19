@@ -3,9 +3,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain.text_splitters import RecursiveCharacterTextSplitter
 
-
+try:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter  # 一些旧版在这里
+except ImportError:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter  # 推荐：独立库
 # ------------------------ Section Guessing (metadata) -------------------
 
 # SECTION_RE = re.compile(

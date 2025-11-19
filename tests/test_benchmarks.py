@@ -1,4 +1,5 @@
 import json
+import time
 import pytest
 from pathlib import Path
 from datetime import datetime
@@ -70,6 +71,7 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     Returns:
         dict: Result dictionary with test outcome and metrics
     """
+    latency_ms = None
     benchmark_id = benchmark.get("id", "unknown")
     question = benchmark["question"]
     expected_answer = benchmark["expected_answer"]
@@ -84,6 +86,7 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     print(f"  Threshold: {threshold}")
     print(f"{'─'*60}")
     
+    t0 = time.perf_counter()
     # Get answer from TokenSmith
     try:
         retrieved_answer, chunks_info, hyde_query = get_tokensmith_answer(
@@ -91,7 +94,9 @@ def run_benchmark(benchmark, config, results_dir, scorer):
             config=config,
             golden_chunks=golden_chunks if config["use_golden_chunks"] else None
         )
+        latency_ms = (time.perf_counter() - t0) * 1000.0
     except Exception as e:
+        latency_ms = (time.perf_counter() - t0) * 1000.0
         import logging, traceback
         error_msg = f"Error running TokenSmith: {e}"
         print(f"  ❌ FAILED: {error_msg}")
@@ -103,26 +108,26 @@ def run_benchmark(benchmark, config, results_dir, scorer):
     
     # Validate answer
     if not retrieved_answer or not retrieved_answer.strip():
-        error_msg = f"No answer generated for benchmark '{benchmark_id}'"
+        error_msg = f"No answer generated for benchmark '{benchmark_id}' (latency: {latency_ms:.1f} ms)"
         print(f"  ❌ FAILED: {error_msg}")
         log_failure(results_dir, benchmark_id, error_msg)
-        return {"passed": False}
+        return {"passed": False, "latency_ms": latency_ms}
     
     # Calculate scores
     try:
         scores = scorer.calculate_scores(retrieved_answer, expected_answer, keywords, question=question)
     except Exception as e:
-        error_msg = f"Scoring error: {e}"
+        error_msg = f"Scoring error: {e} (latency: {latency_ms:.1f} ms)"
         print(f"  ❌ FAILED: {error_msg}")
         log_failure(results_dir, benchmark_id, error_msg)
-        return {"passed": False}
+        return {"passed": False, "latency_ms": latency_ms}
     
     # Check if test passed
     final_score = scores.get("final_score", 0)
     passed = final_score >= threshold
     
     # Print result
-    print_result(benchmark_id, passed, final_score, threshold, scores, config["output_mode"], retrieved_answer)
+    print_result(benchmark_id, passed, final_score, threshold, scores, config["output_mode"], retrieved_answer, latency_ms=latency_ms)
     
     # Save detailed result
     result_data = {
@@ -138,6 +143,7 @@ def run_benchmark(benchmark, config, results_dir, scorer):
         "metric_weights": get_metric_weights(scorer, scores.get("active_metrics", [])),
         "chunks_info": chunks_info if chunks_info else [],
         "hyde_query": hyde_query if hyde_query else None,
+        "latency_ms": latency_ms,
         "timestamp": datetime.now().isoformat(),
         "config": {
             "model_path": config["model_path"],
@@ -299,13 +305,15 @@ def clean_answer(text):
     return text.strip()
 
 
-def print_result(benchmark_id, passed, final_score, threshold, scores, output_mode, retrieved_answer=None):
+def print_result(benchmark_id, passed, final_score, threshold, scores, output_mode, retrieved_answer=None, latency_ms=None):
     """Print test result based on output mode."""
     if output_mode == "terminal":
         # Detailed terminal output
         status = "✅ PASSED" if passed else "❌ FAILED"
         print(f"\n  {status}")
         print(f"  Final Score: {final_score:.3f} (threshold: {threshold:.3f})")
+        if latency_ms is not None:
+            print(f"  Latency: {latency_ms:.1f} ms")
         
         # Show metric breakdown
         active_metrics = scores.get("active_metrics", [])

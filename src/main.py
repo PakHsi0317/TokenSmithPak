@@ -160,6 +160,53 @@ def get_answer(
     elif cfg.use_indexed_chunks:
         # Use chunks from the textbook index
         ranked_chunks = use_indexed_chunks(question, chunks, logger)
+
+        if cfg.fallback_to_full_index and len(ranked_chunks) == 0:
+            logger.warning("No indexed chunks found, falling back to full FAISS+BM25 retrieval")
+
+            # ------- 以下代码基本复制自下面那个 else 分支 -------
+            retrieval_query = question
+            if cfg.use_hyde:
+                model_path = args.model_path or cfg.model_path
+                hypothetical_doc = generate_hypothetical_document(
+                    question, model_path, max_tokens=cfg.hyde_max_tokens
+                )
+                retrieval_query = hypothetical_doc
+                hyde_query = hypothetical_doc
+
+            pool_n = max(cfg.pool_size, cfg.top_k + 10)
+            raw_scores: Dict[str, Dict[int, float]] = {}
+            for retriever in retrievers:
+                raw_scores[retriever.name] = retriever.get_scores(retrieval_query, pool_n, chunks)
+
+            ordered = ranker.rank(raw_scores=raw_scores)
+            topk_idxs = apply_seg_filter(cfg, chunks, ordered)
+            logger.log_chunks_used(topk_idxs, chunks, sources)
+
+            ranked_chunks = [chunks[i] for i in topk_idxs]
+
+            # test 模式下填充 chunks_info（可选，不填也不会挂）
+            if is_test_mode:
+                faiss_scores = raw_scores.get("faiss", {})
+                bm25_scores = raw_scores.get("bm25", {})
+                
+                faiss_ranked = sorted(faiss_scores.keys(), key=lambda i: faiss_scores[i], reverse=True)
+                bm25_ranked = sorted(bm25_scores.keys(), key=lambda i: bm25_scores[i], reverse=True)
+                
+                faiss_ranks = {idx: rank + 1 for rank, idx in enumerate(faiss_ranked)}
+                bm25_ranks = {idx: rank + 1 for rank, idx in enumerate(bm25_ranked)}
+                
+                chunks_info = []
+                for rank, idx in enumerate(topk_idxs, 1):
+                    chunks_info.append({
+                        "rank": rank,
+                        "chunk_id": idx,
+                        "content": chunks[idx],
+                        "faiss_score": faiss_scores.get(idx, 0),
+                        "faiss_rank": faiss_ranks.get(idx, 0),
+                        "bm25_score": bm25_scores.get(idx, 0),
+                        "bm25_rank": bm25_ranks.get(idx, 0),
+                    })
     else:
         # Step 0: Query Enhancement (HyDE)
         retrieval_query = question

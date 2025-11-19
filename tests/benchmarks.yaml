@@ -71,3 +71,129 @@ benchmarks:
     expected_answer: "A lossy decomposition occurs when a relation R is decomposed into smaller relations R1 and R2 such that joining them back together produces spurious tuples not present in the original relation, resulting in loss of information about which attribute combinations actually existed. This happens when the intersection of R1 and R2 does not form a superkey for either relation, violating the lossless-join condition; the natural join of the decomposed relations generates extra tuples from invalid combinations, making it impossible to reconstruct the original data accurately, which is why database design insists that all decompositions must be lossless."
     keywords: ["lossy decomposition", "spurious tuples", "lossless join", "superkey", "natural join", "information loss", "functional dependency"]
     similarity_threshold: 0.70
+
+  - id: "iterator_model_query_execution"
+    question: "Describe the iterator model used in query operators and the purpose of the open(), next(), and close() interface."
+    expected_answer: "The iterator model represents each operator as a self-contained module exposing open(), next(), and close(). open() initializes state, next() returns the next tuple or NULL, and close() releases resources. This design composes operators into pipelines and enables modular, pull-based execution."
+    keywords: ["iterator model", "open-next-close", "query execution", "operators"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+  
+  - id: "threadsafe_hash_table_concurrency"
+    question: "What are the main concurrency issues in a hash table, and how do fine-grained locks improve throughput compared to a global lock?"
+    expected_answer: "Concurrent hash tables suffer from race conditions when multiple threads modify shared buckets; using one global lock serializes operations and restricts scalability. Fine-grained locking, such as per-bucket or striped locks, reduces contention and allows different buckets to be accessed in parallel, improving throughput while maintaining correctness."
+    keywords: ["concurrency", "race conditions", "fine-grained locking", "bucket locking", "thread safety"]
+    similarity_threshold: 0.78
+    golden_chunks: null
+
+  - id: "hash_table_lock_striping_vs_bucket"
+    question: "Explain the difference between lock striping and per-bucket locking in a thread-safe hash table."
+    expected_answer: "Per-bucket locking assigns one lock per hash bucket, maximizing parallelism but increasing overhead when many locks exist. Lock striping groups multiple buckets under a single lock, reducing lock count and overhead while still enabling more concurrency than a global lock. The trade-off is between granularity and lock management cost."
+    keywords: ["lock striping", "per-bucket locking", "granularity", "overhead"]
+    similarity_threshold: 0.78
+    golden_chunks: null
+
+  - id: "hash_function_contention"
+    question: "How does the choice of hash function affect contention and performance in concurrent hash tables?"
+    expected_answer: "A poor hash function leads to uneven key distribution, causing many keys to map to the same bucket, which increases lock contention and reduces parallelism. A high-quality hash function spreads keys uniformly across buckets, balancing load and reducing contention."
+    keywords: ["hash function", "contention", "key distribution", "load balancing"]
+    similarity_threshold: 0.78
+    golden_chunks: null
+
+  - id: "ordered_index_range_queries"
+    question: "Why are ordered indexes necessary for efficient range queries, and why can’t hash indexes support them?"
+    expected_answer: "Ordered indexes maintain keys in sorted order, enabling range scans by traversing ordered leaf nodes. Hash indexes destroy ordering by hashing, supporting only exact-key lookups; thus they cannot efficiently retrieve key ranges or ordered results."
+    keywords: ["ordered index", "range query", "hash index", "sorted order"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+
+  - id: "ordered_index_complexity"
+    question: "What are the time complexities of point lookups and range scans in an ordered index?"
+    expected_answer: "Point lookups in an ordered index like a B+ tree run in O(log N) to descend the tree, while range scans cost O(log N + K), where K is the number of returned items, because only the initial lookup requires logarithmic time and the remainder is a sequential scan."
+    keywords: ["complexity", "point lookup", "range scan", "B+ tree"]
+    similarity_threshold: 0.78
+    golden_chunks: null
+
+  - id: "bplustree_structure"
+    question: "Describe the structure of a B+ tree and the roles of internal and leaf nodes."
+    expected_answer: "A B+ tree is a multi-way balanced tree whose internal nodes contain separator keys directing search, while leaf nodes store all actual key-value pairs and are linked for range scans. All leaves reside at the same level, ensuring balanced height and predictable performance."
+    keywords: ["B+ tree", "internal nodes", "leaf nodes", "balanced tree"]
+    similarity_threshold: 0.82
+    golden_chunks: null
+
+  - id: "bplustree_insertion_split"
+    question: "What happens during B+ tree insertion when a node is full, and how does the split process work?"
+    expected_answer: "When a node is full during insertion, it is split into two nodes around the median key; for leaf nodes, keys are divided and the median is copied upward, while for internal nodes the median key is promoted. Splitting maintains node capacity constraints and preserves height balance."
+    keywords: ["B+ tree", "insertion", "node split", "median key", "promotion"]
+    similarity_threshold: 0.82
+    golden_chunks: null
+
+  - id: "bplustree_leaf_storage_reason"
+    question: "Why do B+ trees store all key-value pairs only in leaf nodes, and what advantage does this give?"
+    expected_answer: "Storing all actual records in the leaves simplifies internal nodes to keys only, increasing fan-out and decreasing tree height. This yields fewer I/Os, predictable range scans, and faster traversal."
+    keywords: ["leaf nodes", "fan-out", "records", "range scans"]
+    similarity_threshold: 0.78
+    golden_chunks: null
+
+  - id: "trie_prefix_lookup"
+    question: "Compare tries and hash tables for prefix-based lookups. When is a trie preferred?"
+    expected_answer: "Hash tables support only exact key lookups, while tries allow efficient prefix queries by following shared prefixes in the tree structure. Tries are preferred when workloads include prefix searches, autocomplete, or dictionary-style operations where structural sharing improves performance."
+    keywords: ["trie", "hash table", "prefix lookup", "autocomplete"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+
+  - id: "inverted_index_boolean_queries"
+    question: "What is an inverted index, and how does it support text search operations such as AND/OR queries?"
+    expected_answer: "An inverted index maps each term to a posting list of documents containing it. Boolean queries like AND and OR are implemented by intersecting or unioning posting lists, enabling efficient text search across large document sets."
+    keywords: ["inverted index", "posting list", "boolean query", "text search"]
+    similarity_threshold: 0.82
+    golden_chunks: null
+
+  - id: "rtree_spatial_nodes"
+    question: "What data does an R-tree store in each node, and how does it support spatial queries such as intersection or containment?"
+    expected_answer: "R-tree nodes store Minimum Bounding Rectangles (MBRs) that enclose child rectangles or objects. Spatial queries evaluate whether rectangles intersect or contain a query region and recursively traverse only relevant branches, reducing unnecessary exploration."
+    keywords: ["R-tree", "MBR", "spatial query", "intersection", "containment"]
+    similarity_threshold: 0.82
+    golden_chunks: null
+
+  - id: "rtree_mbr_importance"
+    question: "Explain the concept of a Minimum Bounding Rectangle (MBR) in R-trees and how it affects query performance."
+    expected_answer: "An MBR encloses all objects in a node; smaller and less overlapping MBRs reduce query branching and improve pruning efficiency. Large or overlapping MBRs increase search paths, harming query performance."
+    keywords: ["MBR", "overlap", "pruning", "R-tree performance"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+
+  - id: "learned_index_cdf"
+    question: "How does a learned index model approximate the CDF of keys, and how does that help predict key positions?"
+    expected_answer: "Learned indexes treat indexing as a prediction problem by approximating a key’s cumulative distribution function (CDF). The model predicts the position of a key in sorted order; the prediction guides lookup within a narrow search range, reducing search cost."
+    keywords: ["learned index", "CDF", "prediction", "position estimation"]
+    similarity_threshold: 0.82
+    golden_chunks: null
+
+  - id: "learned_index_limitations"
+    question: "What are the main challenges of learned indexes related to updates and error bounds?"
+    expected_answer: "Learned models must maintain accuracy as data changes; insertions or shifts in distribution can invalidate predictions, increasing error bounds. Large errors expand the search window, harming performance and requiring model retraining or fallback indexes."
+    keywords: ["learned index", "updates", "error bounds", "retraining"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+  
+  - id: "query_parsing_components"
+    question: "What are the main components extracted during query parsing, and how are they used during query execution?"
+    expected_answer: "Query parsing breaks a SQL-like query into structured components such as projection attributes, selection predicates, grouping keys, and aggregate functions. These parsed components guide query plan generation, telling the system which operators to instantiate, which attributes to read, and how to filter, aggregate, or group data during execution."
+    keywords: ["query parsing", "projection", "selection", "grouping", "query plan"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+
+  - id: "columnar_storage_advantages"
+    question: "Why is columnar storage more efficient than row storage for analytical workloads, especially when combined with compression?"
+    expected_answer: "Analytical workloads often access only a few columns from wide tables; columnar storage reads only those columns, reducing I/O. Because each column stores homogeneous data, it compresses well using techniques like delta encoding or bit-packing, further decreasing storage and speeding up scans compared to row-wise storage."
+    keywords: ["columnar storage", "compression", "analytical workloads", "I/O reduction"]
+    similarity_threshold: 0.8
+    golden_chunks: null
+
+  - id: "rtree_node_split_strategy"
+    question: "What is the purpose of the quadratic split algorithm in R-trees, and how does it choose seed entries?"
+    expected_answer: "The quadratic split algorithm resolves node overflow by selecting two entries (‘seeds’) that are farthest apart in area expansion cost, ensuring that clusters with minimal overlap and area growth are formed. By choosing seeds that maximize the wasted area if placed together, the algorithm reduces MBR overlap and improves query performance."
+    keywords: ["R-tree", "quadratic split", "node splitting", "seed selection", "MBR overlap"]
+    similarity_threshold: 0.82
+    golden_chunks: null

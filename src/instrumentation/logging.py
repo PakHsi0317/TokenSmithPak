@@ -190,6 +190,18 @@ class RunLogger:
         self._write_log(self.current_query_data)
         self.current_query_data = {}  # Reset for next query
 
+    def warning(self, message: str, context: str = ""):
+        """Log warning-level events (e.g., fallbacks, degraded behavior)."""
+        warning_data = {
+            "event": "warning",
+            "timestamp": datetime.now().isoformat(),
+            "query_id": self.query_count,
+            "message": message,
+            "context": context,
+            "current_query": self.current_query_data.get("query", ""),
+        }
+        self._write_log(warning_data)
+        
     def log_error(self, error: Exception, context: str = ""):
         """Log errors during processing."""
         error_data = {
