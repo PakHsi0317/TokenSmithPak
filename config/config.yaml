@@ -13,4 +13,8 @@ recursive_overlap: 200
 use_hyde: false
 hyde_max_tokens: 600
 use_indexed_chunks: True
+<<<<<<< HEAD
 fallback_to_full_index: true
+=======
+fallback_to_full_index: true
+>>>>>>> 617cc9a6f280eda00b17ae88243d351bf0215f6a
